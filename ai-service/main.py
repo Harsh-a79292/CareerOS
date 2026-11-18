@@ -1,3 +1,4 @@
+print("MAIN.PY STARTED", flush=True)
 import os
 import json
 import time
