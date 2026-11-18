@@ -3,7 +3,7 @@ const axios = require("axios");
 const fs = require("fs");
 const FormData = require("form-data");
 
-const AI_SERVICE = "http://localhost:8000";
+const AI_SERVICE = process.env.AI_SERVICE_URL || "http://localhost:8000";
 
 // 1. UPLOAD RESUME
 exports.uploadResume = async (req, res) => {
