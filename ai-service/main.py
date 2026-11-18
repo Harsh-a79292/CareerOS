@@ -11,7 +11,11 @@ from google import genai
 from google.genai import types
 
 # RAG router
+print("Starting CareerOS AI imports...", flush=True)
+
 from rag_service import router as rag_router
+
+print("RAG router imported successfully!", flush=True)
 
 
 # =====================================
