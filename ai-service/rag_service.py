@@ -1,10 +1,8 @@
-
 import os
 import hashlib
 from pathlib import Path
 
 import chromadb
-from sentence_transformers import SentenceTransformer
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -22,15 +20,13 @@ load_dotenv()
 router = APIRouter()
 
 MODEL_NAME = "gemini-3.1-flash-lite"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "gemini-embedding-001"
 
 DB_PATH = Path(__file__).resolve().parent / "chroma_db"
 
 chroma_client = chromadb.PersistentClient(
     path=str(DB_PATH)
 )
-
-embedding_model = None
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -41,23 +37,20 @@ gemini_client = genai.Client(api_key=API_KEY)
 
 
 # =====================================
-# 2. LOAD EMBEDDING MODEL
+# 2. GEMINI EMBEDDINGS
 # =====================================
 
-def get_embedding_model():
+def generate_embeddings(texts):
 
-    global embedding_model
+    response = gemini_client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=texts
+    )
 
-    if embedding_model is None:
-        print("Loading sentence transformer model...")
-
-        embedding_model = SentenceTransformer(
-            EMBEDDING_MODEL
-        )
-
-        print("Embedding model loaded successfully!")
-
-    return embedding_model
+    return [
+        embedding.values
+        for embedding in response.embeddings
+    ]
 
 
 # =====================================
@@ -151,12 +144,8 @@ def index_resume(data: IndexResumeRequest):
                 detail="No readable resume content found"
             )
 
-        model = get_embedding_model()
-
-        embeddings = model.encode(
-            chunks,
-            normalize_embeddings=True
-        ).tolist()
+        # Generate embeddings using Gemini
+        embeddings = generate_embeddings(chunks)
 
         collection_name = get_collection_name(
             data.user_id,
@@ -242,12 +231,10 @@ def chat_resume(data: ChatResumeRequest):
                 detail="Resume has not been indexed yet"
             )
 
-        model = get_embedding_model()
-
-        question_embedding = model.encode(
-            [data.question],
-            normalize_embeddings=True
-        ).tolist()
+        # Generate question embedding using Gemini
+        question_embedding = generate_embeddings(
+            [data.question]
+        )
 
         total_chunks = collection.count()
 
