@@ -16,8 +16,31 @@ const jobApplicationRoutes = require("./routes/jobApplicationRoutes");
 
 const app = express();
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://frontend-ten-chi-77.vercel.app",
+  "http://localhost:5173"
+];
+
+const allowedOrigins = (
+  process.env.CORS_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(",")
+)
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 app.use(express.json());
 
 // API Routes
